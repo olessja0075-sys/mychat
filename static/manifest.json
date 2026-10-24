@@ -1,0 +1,9 @@
+{
+  "name": "Мой чат",
+  "short_name": "Мой чат",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#8b1a1a",
+  "icons": []
+}
