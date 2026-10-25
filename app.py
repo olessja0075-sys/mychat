@@ -1,5 +1,4 @@
 import os
-import json
 import sqlite3
 import google.generativeai as genai
 from fastapi import FastAPI
@@ -9,7 +8,8 @@ from pydantic import BaseModel
 
 app = FastAPI()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-2.0-flash")
+# Меняем модель на актуальную
+model = genai.GenerativeModel("gemini-2.5-flash") 
 
 def init_db():
     conn = sqlite3.connect("story.db")
@@ -161,10 +161,9 @@ def next_scene(data: NextScene):
         return {"error": "no next scene"}
 
     c.execute("UPDATE users SET scene=? WHERE user_id=?", (nxt, data.user_id))
-    c.execute("DELETE FROM messages WHERE user_id=?", (data.user_id,)) # очищаем чат для новой сцены
+    c.execute("DELETE FROM messages WHERE user_id=?", (data.user_id,)) 
     conn.commit()
 
-    # Генерируем стартовое сообщение для новой сцены
     start_prompt = SCENES[nxt]["start_prompt"]
     full_prompt = f"{start_prompt}\n\nИмя героя: {name}\n\nНапиши первое сообщение от лица персонажей. Формат: Имя: текст"
     
