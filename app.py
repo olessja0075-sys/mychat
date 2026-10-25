@@ -13,7 +13,7 @@ generation_config = {
     "temperature": 0.9,
     "max_output_tokens": 150,
 }
-model = genai.GenerativeModel("gemini-1.5-flash-8b", generation_config=generation_config)
+model = genai.GenerativeModel("gemini-2.5-flash-lite", generation_config=generation_config)
 
 def init_db():
     conn = sqlite3.connect("story.db")
