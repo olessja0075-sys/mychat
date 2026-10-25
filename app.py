@@ -7,10 +7,13 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 app = FastAPI()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-# Меняем модель на актуальную
-model = genai.GenerativeModel("gemini-2.5-flash") 
 
+# --- Настройка Gemini ---
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+# Используем актуальную модель (как просит Google в ошибке)
+model = genai.GenerativeModel("gemini-3.8-flash")
+
+# --- База данных ---
 def init_db():
     conn = sqlite3.connect("story.db")
     c = conn.cursor()
@@ -23,6 +26,7 @@ def init_db():
 
 init_db()
 
+# --- Сцены ---
 SCENES = {
     1: {
         "title": "Утро дома",
@@ -65,6 +69,7 @@ SCENES = {
     }
 }
 
+# --- Модели данных ---
 class EnterName(BaseModel):
     user_id: str
     name: str
@@ -76,6 +81,7 @@ class SendMessage(BaseModel):
 class NextScene(BaseModel):
     user_id: str
 
+# --- API ---
 @app.post("/api/enter")
 def enter(data: EnterName):
     conn = sqlite3.connect("story.db")
@@ -179,6 +185,7 @@ def next_scene(data: NextScene):
     
     return {"scene": nxt, "title": SCENES[nxt]["title"], "next_button": SCENES[nxt]["next_button"], "start_message": ai_text}
 
+# --- Раздача файлов ---
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
