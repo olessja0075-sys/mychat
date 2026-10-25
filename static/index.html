@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Рыжий лес</title>
+<title>Мой чат</title>
 <link rel="manifest" href="/static/manifest.json">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
-  body { background: #0a0a0a; color: #ddd; height: 100vh; overflow: hidden; }
+  body { background: #0a0a0a; color: #ddd; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 
   /* Экран входа */
   #login { display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -22,7 +22,7 @@
   #enter-btn:hover { background: #a52222; }
 
   /* Список чатов */
-  #chat-list-screen { display: none; height: 100vh; background: #0e0e0e; }
+  #chat-list-screen { display: none; height: 100vh; background: #0e0e0e; flex-direction: column; }
   #chat-list-screen header { padding: 16px; background: #151515; border-bottom: 1px solid #222;
                              color: #b33; font-weight: 600; letter-spacing: 1px; }
   .chat-item { display: flex; align-items: center; padding: 16px; cursor: pointer;
@@ -45,7 +45,6 @@
   .msg.assistant { align-self: flex-start; background: #1a1a1a; color: #ccc;
                    border-bottom-left-radius: 4px; border: 1px solid #222; }
   .msg.assistant .speaker { color: #b33; font-weight: 600; font-size: 13px; display: block; margin-bottom: 2px; }
-  .msg.assistant .err { color: #e55; }
   #next-area { padding: 8px 16px; background: #0e0e0e; display: none; }
   #next-btn { width: 100%; padding: 12px; border: none; border-radius: 8px;
               background: #4a1a1a; color: #e88; font-size: 15px; cursor: pointer; }
@@ -61,25 +60,22 @@
 </head>
 <body>
 
-<!-- Вход -->
 <div id="login">
-  <h1>РЫЖИЙ ЛЕС</h1>
+  <h1>МОЙ ЧАТ</h1>
   <p>введи своё имя</p>
   <input id="name-input" placeholder="Твоё имя..." maxlength="20">
   <button id="enter-btn">Далее</button>
 </div>
 
-<!-- Список чатов -->
 <div id="chat-list-screen">
   <header>ИСТОРИИ</header>
   <div id="chat-items"></div>
 </div>
 
-<!-- Чат -->
 <div id="chat-screen">
   <div id="chat-header">
     <button id="back-btn">←</button>
-    <span id="chat-title">Рыжий лес</span>
+    <span id="chat-title">Мой чат</span>
   </div>
   <div id="messages"></div>
   <div id="next-area"><button id="next-btn"></button></div>
@@ -90,7 +86,6 @@
 </div>
 
 <script>
-const API = '';
 let userId = localStorage.getItem('userId') || 'u_' + Math.random().toString(36).slice(2);
 localStorage.setItem('userId', userId);
 let currentNext = null;
@@ -101,20 +96,20 @@ function show(el) { document.querySelectorAll('body > div').forEach(d => d.style
 document.getElementById('enter-btn').onclick = async () => {
   const name = document.getElementById('name-input').value.trim();
   if (!name) return;
-  await fetch(API + '/api/enter', {
+  await fetch('/api/enter', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ user_id: userId, name })
   });
   show(document.getElementById('chat-list-screen'));
   document.getElementById('chat-items').innerHTML =
-    '<div class="chat-item" onclick="openChat()"><div><div class="name">Рыжий лес</div><div class="preview">история начинается...</div></div></div>';
+    '<div class="chat-item" onclick="openChat()"><div><div class="name">Рыжий лес (Мой чат)</div><div class="preview">нажми, чтобы начать...</div></div></div>';
 };
 
 // Открыть чат
 async function openChat() {
   show(document.getElementById('chat-screen'));
   document.getElementById('messages').innerHTML = '';
-  const res = await fetch(API + '/api/story/' + userId);
+  const res = await fetch('/api/story/' + userId);
   const data = await res.json();
   if (data.error) { location.reload(); return; }
   document.getElementById('chat-title').textContent = data.title;
@@ -128,23 +123,19 @@ async function openChat() {
 // Добавить сообщение
 function addMsg(role, text) {
   const box = document.getElementById('messages');
-  const div = document.createElement('div');
-  div.className = 'msg ' + role;
   if (role === 'assistant') {
-    // разбиваем по строкам "Имя: текст"
     const lines = text.split('\n').filter(l => l.trim());
     lines.forEach(line => {
-      const m = line.match(/^([^:]+):\s*(.*)$/);
       const d = document.createElement('div');
       d.className = 'msg assistant';
-      if (m) {
-        d.innerHTML = '<span class="speaker">' + m[1] + '</span>' + m[2];
-      } else {
-        d.textContent = line;
-      }
+      const m = line.match(/^([^:]+):\s*(.*)$/);
+      if (m) { d.innerHTML = '<span class="speaker">' + m[1] + '</span>' + m[2]; }
+      else { d.textContent = line; }
       box.appendChild(d);
     });
   } else {
+    const div = document.createElement('div');
+    div.className = 'msg user';
     div.textContent = text;
     box.appendChild(div);
   }
@@ -171,7 +162,7 @@ async function send() {
   btn.disabled = true;
   addMsg('user', text);
 
-  const res = await fetch(API + '/api/send', {
+  const res = await fetch('/api/send', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ user_id: userId, text })
   });
@@ -182,21 +173,23 @@ async function send() {
 
 // Следующая сцена
 document.getElementById('next-btn').onclick = async () => {
-  const res = await fetch(API + '/api/next', {
+  document.getElementById('messages').innerHTML = '<div style="color:#666; text-align:center;">Загрузка...</div>';
+  const res = await fetch('/api/next', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ user_id: userId })
   });
   const data = await res.json();
+  document.getElementById('messages').innerHTML = '';
   document.getElementById('chat-title').textContent = data.title;
   currentNext = data.next_button;
   updateNextBtn();
-  addMsg('assistant', '— сцена сменилась: ' + data.title + ' —');
+  if (data.start_message) addMsg('assistant', data.start_message);
 };
 
 // Назад в список
 document.getElementById('back-btn').onclick = () => show(document.getElementById('chat-list-screen'));
 
-// Автовход если имя уже есть
+// Автовход
 if (localStorage.getItem('userName')) {
   document.getElementById('name-input').value = localStorage.getItem('userName');
 }
